@@ -15,3 +15,13 @@ A personal weekly timetable that installs on a phone home screen.
 
 A block is `[start hour, end hour, title, detail, category, optional "HH:MM|HH:MM" label]`.
 Hours run past midnight (24 is 00:00, 26 is 02:00). Categories: work, travel, gym, eat, guitar, intern, sleep, free, tent.
+
+## Gym app
+
+`gym/` is a separate phone app (opens as "Gym"): five-session split, weights per lift, rest timer, food and steps, progress log. It works offline and keeps its data on the phone.
+
+- `gym/index.html`: the whole app
+- `gym/sw.js`: offline copy. Change the `C` version name in it whenever the app changes, so phones pick up the update.
+- `gym/gym.ics`: reminder calendar (gym, weigh-in, protein check, photo). Edit the times in it, then add it to your calendar.
+
+Back up: Me tab, then Back up. Restore with the Restore button.
