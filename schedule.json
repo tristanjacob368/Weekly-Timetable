@@ -1,0 +1,41 @@
+{
+ "monday": "2026-11-16",
+ "label": "16 Nov 2026",
+ "days": {
+  "Mon": [
+   [11, 12, "Guitar", "45 min", "guitar"],
+   [12, 14, "Gym", "Chest, shoulders, triceps", "gym"]
+  ],
+  "Tue": [
+   [9, 17, "Kurt Geiger internship", "", "intern", "09:20|16:30"]
+  ],
+  "Wed": [
+   [11, 12, "Guitar", "45 min", "guitar"],
+   [12, 14, "Gym", "Back, biceps, abs", "gym"]
+  ],
+  "Thu": [
+   [11, 12, "Guitar", "45 min", "guitar"],
+   [12, 14, "Gym", "Legs and abs", "gym"]
+  ],
+  "Fri": [
+   [11, 12, "Guitar", "45 min", "guitar"],
+   [12, 14, "Gym", "Upper body", "gym"]
+  ],
+  "Sat": [
+   [11, 12, "Guitar", "45 min", "guitar"],
+   [12, 14, "Rest day", "", "free"]
+  ],
+  "Sun": [
+   [11, 12, "Guitar", "45 min", "guitar"],
+   [12, 14, "Gym bonus", "Legs and abs (optional)", "tent"]
+  ]
+ },
+ "hints": {"Mon": ["Wake and bed times are not set yet."], "Tue": ["Wake and bed times are not set yet.", "Wake time and the commute to the internship are not set yet."], "Wed": ["Wake and bed times are not set yet."], "Thu": ["Wake and bed times are not set yet."], "Fri": ["Wake and bed times are not set yet."], "Sat": ["Wake and bed times are not set yet."], "Sun": ["Wake and bed times are not set yet."]},
+ "notes": [
+  "Gym is a five-session split: chest, shoulders and triceps; back, biceps and abs; legs and abs; upper body; and an optional bonus legs and abs. Minimum four sessions a week. If you skip Sunday’s bonus, add leg press or leg curl to Friday’s upper session.",
+  "Guitar is 45 minutes at 11:00. On a late wake, do 30 minutes.",
+  "Tuesdays are the Kurt Geiger internship (09:20–16:30) every week, so there is no gym or guitar that day. The back session moved to Wednesday.",
+  "No work shifts this week.",
+  "Gym time (12:00–14:00) is a placeholder until we adjust it. Wake and bed times are not set yet."
+ ]
+}
