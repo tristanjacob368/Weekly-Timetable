@@ -204,11 +204,6 @@ function renderTop(){
   var tr=p.filter(trk),dn=tr.filter(function(b){return store[bid(ref,b)]}).length,tot=tr.length,C=2*Math.PI*26,off=tot?C*(1-dn/tot):C;
   h+='<div class="tile stat"><span class="lab">'+(cur?'Done today':'Done · '+ref)+'</span><div class="ring"><svg width="68" height="68" viewBox="0 0 68 68" role="img" aria-label="'+dn+' of '+tot+' done"><circle cx="34" cy="34" r="26" fill="none" stroke="rgba(255,255,255,.1)" stroke-width="7"/><circle cx="34" cy="34" r="26" fill="none" stroke="#FF6FB5" stroke-width="7" stroke-linecap="round" stroke-dasharray="'+C.toFixed(1)+'" stroke-dashoffset="'+off.toFixed(1)+'" transform="rotate(-90 34 34)"/><text x="34" y="39" text-anchor="middle">'+dn+'/'+tot+'</text></svg></div></div>';
 
-  var g=0;DAYS.forEach(function(d){plan(d).forEach(function(b){if(isGym(b)&&store[bid(d,b)])g++})});
-  h+='<div class="tile stat"><span class="lab">Gym this week</span><div class="big">'+g+'<small> / 5</small></div><div class="pips">';
-  for(var i=0;i<5;i++)h+='<i class="'+(i<g?'on':'')+'"></i>';
-  h+='</div><span class="sub">Minimum 4</span></div>';
-
   h+='<div class="tile strip"><span class="lab">'+FULL[sel]+' at a glance</span><div class="sbar">';
   plan(sel).forEach(function(b){if(b[4]==="free")return;var s=Math.max(b[0],9),e=Math.min(b[1],27);
     h+='<div class="s '+b[4]+'" title="'+b[2]+'" style="left:'+((s-9)/18*100).toFixed(2)+'%;width:'+((e-s)/18*100).toFixed(2)+'%"></div>'});
