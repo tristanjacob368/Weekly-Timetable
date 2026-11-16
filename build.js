@@ -27,8 +27,10 @@ const L = [
 const ALERTS = {
   work: [[135, "Start getting ready for work"], [105, "Be ready: shoes, keys, phone, wallet, charger, food"],
          [75, "LEAVE NOW for work (about 45 min journey)"], [10, "Work in 10 min"]],
-  intern: [[150, "Wake up and start getting ready for the internship"], [105, "Be ready: keys, phone, wallet, charger, lunch, smart clothes"],
-           [75, "LEAVE NOW for the internship"], [10, "Internship in 10 min"]],
+  // Tuesday: wake 07:30, leave 08:20 for a 09:20 start (45 min journey + 15 min spare)
+  intern: [[110, "Wake up (7:30). Get out of bed now"], [95, "Shower now"], [75, "Get dressed, eat breakfast"],
+           [65, "Final check: keys, phone, wallet, charger, lunch, Oyster/card"], [60, "LEAVE NOW for the internship (45 min journey)"],
+           [10, "Internship in 10 min"]],
   gym: [[60, "Gym at 12: eat something and fill your water bottle"], [30, "Pack gym bag: headphones, towel, phone, charger"],
         [10, "Leave for the gym now. Open your gym app"]],
   guitar: [[10, "Guitar in 10 min: 45 min, even 30 is fine"]],
