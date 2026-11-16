@@ -1,6 +1,6 @@
 /* Offline-first: serve the saved copy straight away, refresh it in the background.
    Bump C when the app changes so phones pick up the new files. */
-var C = "todo-v1";
+var C = "todo-v2";
 var ASSETS = [
   "./", "index.html", "manifest.webmanifest", "icon-192.png", "icon-512.png", "apple-touch-icon.png",
   "fonts/syne-latin-700-normal.woff2", "fonts/syne-latin-800-normal.woff2",
