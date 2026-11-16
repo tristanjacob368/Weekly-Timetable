@@ -90,6 +90,22 @@ textarea.f{min-height:70px;resize:vertical}
 .toast.on{display:flex}
 .toast button{border:0;background:none;color:#FFB0CB;font:700 14px var(--body);cursor:pointer;min-height:36px}
 .menu p{color:var(--mu);font-size:13px;margin:6px 0 0}
+.hb{display:flex;gap:8px;align-items:center}
+.focusbtn{min-height:44px;padding:0 14px;border-radius:14px;border:0;background:#fff;color:#111;font:700 14px var(--body);cursor:pointer}
+.fx{position:fixed;inset:0;z-index:22;background:#fff;display:none;overflow:auto}.fx.on{display:block}
+.fxin{max-width:640px;margin:0 auto;padding:calc(env(safe-area-inset-top,0px) + 26px) 18px calc(env(safe-area-inset-bottom,0px) + 24px);min-height:100%;display:flex;flex-direction:column;gap:12px}
+.fxt{font:800 30px/1.15 var(--disp);margin:6px 0;overflow-wrap:anywhere}
+.fxtime{font:500 64px/1 var(--mono);text-align:center;margin:14px 0}
+.fxsub{text-align:center;color:var(--mu);margin-top:-6px}
+.stp{display:flex;align-items:center;gap:2px;border-bottom:1px solid #EEE}
+.stp .sc{flex:none;width:44px;height:44px;border:0;background:none;display:grid;place-items:center;cursor:pointer}
+.stp .sc b{width:22px;height:22px;border-radius:50%;border:2px solid #B3B0BF;display:grid;place-items:center;color:transparent;font-size:13px}
+.stp.d .sc b{background:#111;border-color:#111;color:#fff}.stp.d span{text-decoration:line-through;color:var(--mu)}
+.stp span{flex:1;overflow-wrap:anywhere}.stp .sx{flex:none;width:44px;height:44px;border:0;background:none;color:var(--mu);font-size:20px;cursor:pointer}
+.bigb{min-height:58px;font-size:17px;border-radius:16px}
+.spacer{flex:1}
+.pl h3{font:500 11px/1 var(--mono);letter-spacing:.14em;text-transform:uppercase;color:var(--mu);margin:18px 2px 8px}
+.pl .pr{display:flex;align-items:center;gap:8px;border-bottom:1px solid #EEE;padding:6px 0}.pl .pr span{flex:1;overflow-wrap:anywhere}.pl .pr .pill{min-height:40px;padding:0 10px;font-size:13px}
 @media(max-width:340px){h1{font-size:28px}.task{gap:6px}}
 
 </style>
@@ -109,6 +125,7 @@ textarea.f{min-height:70px;resize:vertical}
   <div class="tabs" id="tabs"></div>
 </div></div>
 
+<div class="fx" id="focus"></div>
 <div class="sheet" id="sheet"><div class="sh" id="sh"></div></div>
 
 <script>
@@ -117,10 +134,10 @@ textarea.f{min-height:70px;resize:vertical}
 var KEY="todo-v1";
 var DAYN=["Sun","Mon","Tue","Wed","Thu","Fri","Sat"],MON=["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
 var DAYF=["sunday","monday","tuesday","wednesday","thursday","friday","saturday"];
-var S=load(),view="today",editId=null,lastSnap=null,alerts=[],audio=null;
+var S=load(),view="today",editId=null,lastSnap=null,alerts=[],audio=null,stepsDraft=[],fskip=[],fxOpen=false;
 
-function load(){try{var j=JSON.parse(localStorage.getItem(KEY));if(j&&j.tasks){j.set=j.set||{};if(j.set.sound==null)j.set.sound=true;if(j.set.nag==null)j.set.nag=true;if(!j.set.morning)j.set.morning="09:00";return j}}catch(e){}
-  return{tasks:[],set:{sound:true,nag:true,morning:"09:00"}}}
+function load(){try{var j=JSON.parse(localStorage.getItem(KEY));if(j&&j.tasks){j.set=j.set||{};if(j.set.sound==null)j.set.sound=true;if(j.set.nag==null)j.set.nag=true;if(!j.set.morning)j.set.morning="09:00";if(j.set.plan==null)j.set.plan=true;if(!j.set.planTime)j.set.planTime="21:00";return j}}catch(e){}
+  return{tasks:[],set:{sound:true,nag:true,morning:"09:00",plan:true,planTime:"21:00"}}}
 function save(){try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}}
 function $(id){return document.getElementById(id)}
 function esc(s){return String(s==null?"":s).replace(/[&<>"']/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]})}
@@ -179,7 +196,7 @@ function nextDow(idx,forceNext){var n=new Date(),t=new Date(n.getFullYear(),n.ge
 function chipsFor(o){var c=[];if(o.due)c.push(fmtDay(o.due));if(o.time)c.push(fmtTime(o.time));if(o.repeat!=="none")c.push("repeats "+o.repeat);if(o.pri)c.push("!".repeat(o.pri)+" priority");o.tags.forEach(function(t){c.push("#"+t)});return c}
 
 /* ---------- task helpers ---------- */
-function mk(o){var t={id:uid(),title:o.title,notes:o.notes||"",due:o.due||"",time:o.time||"",doOn:o.doOn||"",pri:o.pri||0,repeat:o.repeat||"none",tags:o.tags||[],remind:null,done:false,doneAt:0,created:Date.now(),fired:{},extra:[],lastFire:0};
+function mk(o){var t={id:uid(),title:o.title,notes:o.notes||"",due:o.due||"",time:o.time||"",doOn:o.doOn||"",pri:o.pri||0,repeat:o.repeat||"none",tags:o.tags||[],steps:o.steps||[],remind:null,done:false,doneAt:0,created:Date.now(),fired:{},extra:[],lastFire:0};
   t.remind=o.remind||(t.time?[30,0]:[0]);return t}
 function active(){return S.tasks.filter(function(t){return!t.done})}
 function overdue(t){var d=dueMs(t);if(d==null)return false;if(t.time)return d<Date.now();return t.due<todayS()}
@@ -192,9 +209,9 @@ function nextDue(t){var td=todayS(),d=pd(t.due||td),n=d;
 function snap(){lastSnap=JSON.stringify(S.tasks)}
 function toast(msg,undo){$("tmsg").textContent=msg;$("tundo").style.display=undo?"":"none";$("toast").classList.add("on");clearTimeout(toast.t);toast.t=setTimeout(function(){$("toast").classList.remove("on")},undo?6000:2500)}
 function complete(id){var t=find(id);if(!t)return;snap();
-  if(t.repeat!=="none"&&t.due){var nx=JSON.parse(JSON.stringify(t));nx.id=uid();nx.due=nextDue(t);nx.fired={};nx.extra=[];nx.lastFire=0;nx.created=Date.now();if(t.doOn)nx.doOn="";S.tasks.push(nx);toast("Done. Next: "+fmtDay(nx.due),true)}
+  if(t.repeat!=="none"&&t.due){var nx=JSON.parse(JSON.stringify(t));nx.id=uid();nx.due=nextDue(t);nx.fired={};nx.extra=[];nx.lastFire=0;nx.created=Date.now();nx.steps=(t.steps||[]).map(function(x){return{t:x.t,d:false}});if(t.doOn)nx.doOn="";S.tasks.push(nx);toast("Done. Next: "+fmtDay(nx.due),true)}
   else toast("Done. Nice one.",true);
-  t.done=true;t.doneAt=Date.now();dismissAlert(id);save();render()}
+  t.done=true;t.doneAt=Date.now();dismissAlert(id);if(S.focus&&S.focus.id===id)S.focus=null;save();render();if(fxOpen)renderFocus()}
 function find(id){for(var i=0;i<S.tasks.length;i++)if(S.tasks[i].id===id)return S.tasks[i]}
 
 /* ---------- render ---------- */
@@ -203,6 +220,7 @@ function taskHtml(t,ctx){
   if(t.due){var od=overdue(t);meta.push('<span class="chip '+(od?"bad":t.due===todayS()?"today":"")+'">'+(od&&t.due<todayS()?"Overdue · ":"")+esc(fmtDay(t.due))+(t.time?" · "+fmtTime(t.time):"")+"</span>")}
   if(t.doOn&&t.doOn!==t.due)meta.push('<span class="chip">Do '+esc(fmtDay(t.doOn))+"</span>");
   if(t.repeat!=="none")meta.push('<span class="chip">↻ '+esc(t.repeat)+"</span>");
+  if(t.steps&&t.steps.length){var sd=t.steps.filter(function(x){return x.d}).length;meta.push('<span class="chip">'+sd+"/"+t.steps.length+" steps</span>")}
   t.tags.forEach(function(g){meta.push('<span class="chip tag">#'+esc(g)+"</span>")});
   var col=["var(--p0)","var(--p1)","var(--p2)","var(--p3)"][t.pri];
   return '<div class="task'+(t.done?" done":"")+'" data-id="'+t.id+'"><button class="chk" data-chk="'+t.id+'" aria-label="'+(t.done?"Mark not done":"Mark done")+'" style="--pc:'+col+'"><b>✓</b></button><div class="tb"><div class="tt">'+esc(t.title)+"</div>"+(t.notes?'<div class="note">'+esc(t.notes.length>90?t.notes.slice(0,90)+"…":t.notes)+"</div>":"")+(meta.length?'<div class="meta">'+meta.join("")+"</div>":"")+"</div></div>"}
@@ -215,7 +233,7 @@ function render(){
   var done=S.tasks.filter(function(t){return t.done}).sort(function(x,y){return y.doneAt-x.doneAt});
   if(view==="today"){
     var tot=todayT.length+doneToday;
-    h+='<div class="top"><div><div class="eyebrow">'+esc(DAYN[new Date().getDay()]+" "+new Date().getDate()+" "+MON[new Date().getMonth()])+'</div><h1>'+greet()+'</h1><div class="sub">'+(todayT.length?todayT.length+" to do today":"Nothing left today")+(doneToday?" · "+doneToday+" done":"")+'</div></div><button class="gear" id="gear" aria-label="Settings">⚙</button></div>';
+    h+='<div class="top"><div><div class="eyebrow">'+esc(DAYN[new Date().getDay()]+" "+new Date().getDate()+" "+MON[new Date().getMonth()])+'</div><h1>'+greet()+'</h1><div class="sub">'+(todayT.length?todayT.length+" to do today":"Nothing left today")+(doneToday?" · "+doneToday+" done":"")+'</div></div><div class="hb">'+(todayT.length?'<button class="focusbtn" id="focusbtn">▶ Focus</button>':"")+'<button class="gear" id="gear" aria-label="Settings">⚙</button></div></div>';
     h+='<div class="bar"><i style="width:'+(tot?Math.round(doneToday/tot*100):0)+'%"></i></div>';
     if(od.length)h+='<div class="sec bad"><span>Overdue · '+od.length+"</span></div>"+list(od);
     if(rest.length)h+='<div class="sec"><span>Today</span></div>'+list(rest);
@@ -233,20 +251,23 @@ function render(){
 }
 
 /* ---------- sheet ---------- */
-function openEdit(id){var t=find(id);if(!t)return;editId=id;$("toast").classList.remove("on");
+function openEdit(id){var t=find(id);if(!t)return;editId=id;$("toast").classList.remove("on");stepsDraft=(t.steps||[]).map(function(x){return{t:x.t,d:!!x.d}});
   var rem=[[0,"At time"],[10,"10 min"],[30,"30 min"],[60,"1 hour"],[1440,"1 day"]];
   var h='<h2>Edit task</h2><label for="e_t">Task</label><input class="f" id="e_t" value="'+esc(t.title)+'"><label for="e_n">Notes</label><textarea class="f" id="e_n">'+esc(t.notes)+'</textarea>'
   +'<label>Due</label><div class="row"><input class="f" type="date" id="e_d" value="'+esc(t.due)+'" aria-label="Due date"><input class="f" type="time" id="e_tm" value="'+esc(t.time)+'" aria-label="Due time"></div>'
-  +'<div class="row" style="margin-top:8px"><button class="pill" data-q="0">Today</button><button class="pill" data-q="1">Tomorrow</button><button class="pill" data-q="7">Next week</button><button class="pill" data-q="x">No date</button></div>'
+  +'<div class="row" style="margin-top:8px"><button class="pill" data-q="0">Today</button><button class="pill" data-q="1">Tomorrow</button><button class="pill" data-q="7">Next week</button><button class="pill" data-q="tn">Tonight</button><button class="pill" data-q="tm">Tomorrow 9am</button><button class="pill" data-q="x">No date</button></div>'
+  +'<label>Steps (small pieces)</label><div id="e_steps"></div><div class="row" style="margin-top:6px"><input class="f" id="e_sn" placeholder="Add a small step" enterkeyhint="done"><button class="pill" id="e_sadd" style="flex:none">Add</button></div>'
   +'<label for="e_do">Do on (when you plan to do it)</label><input class="f" type="date" id="e_do" value="'+esc(t.doOn)+'">'
   +'<label>Priority</label><div class="row" id="e_p">'+["None","Low","Medium","High"].map(function(n,i){return'<button class="pill'+(t.pri===i?" on":"")+'" data-pri="'+i+'">'+n+"</button>"}).join("")+"</div>"
   +'<label for="e_r">Repeat</label><select class="f" id="e_r">'+["none","daily","weekdays","weekly","monthly"].map(function(r){return'<option value="'+r+'"'+(t.repeat===r?" selected":"")+">"+(r==="none"?"Doesn\u2019t repeat":r)+"</option>"}).join("")+"</select>"
   +'<label>Remind me</label><div class="row" id="e_rem">'+rem.map(function(r){return'<button class="pill'+(t.remind.indexOf(r[0])>=0?" on":"")+'" data-rem="'+r[0]+'">'+r[1]+"</button>"}).join("")+"</div>"
   +'<label for="e_g">Tags</label><input class="f" id="e_g" placeholder="e.g. work, home" value="'+esc(t.tags.join(", "))+'">'
   +'<div class="btns"><button class="pill danger" id="e_del">Delete</button><button class="pill main" id="e_save">Save</button></div>';
-  $("sh").innerHTML=h;$("sheet").classList.add("on")}
+  $("sh").innerHTML=h;renderSteps();$("sheet").classList.add("on")}
+function renderSteps(){var el=$("e_steps");if(!el)return;el.innerHTML=stepsDraft.map(function(x,i){return'<div class="stp'+(x.d?" d":"")+'"><button class="sc" data-stog="'+i+'" aria-label="Tick step"><b>✓</b></button><span>'+esc(x.t)+'</span><button class="sx" data-sdel="'+i+'" aria-label="Remove step">×</button></div>'}).join("")}
+function addStep(){var i=$("e_sn");if(!i)return;var v=i.value.trim();if(!v)return;stepsDraft.push({t:v,d:false});i.value="";renderSteps();i.focus()}
 function closeSheet(){$("sheet").classList.remove("on");editId=null}
-function saveEdit(){var t=find(editId);if(!t)return;snap();var v=$("e_t").value.trim();if(v)t.title=v;t.notes=$("e_n").value.trim();t.due=$("e_d").value;t.time=t.due?$("e_tm").value:"";t.doOn=$("e_do").value;
+function saveEdit(){var t=find(editId);if(!t)return;snap();addStep();t.steps=stepsDraft.slice();var v=$("e_t").value.trim();if(v)t.title=v;t.notes=$("e_n").value.trim();t.due=$("e_d").value;t.time=t.due?$("e_tm").value:"";t.doOn=$("e_do").value;
   var pr=document.querySelector("#e_p .on");t.pri=pr?+pr.getAttribute("data-pri"):0;t.repeat=$("e_r").value;
   t.remind=[].slice.call(document.querySelectorAll("#e_rem .on")).map(function(b){return+b.getAttribute("data-rem")});t.fired={};t.extra=[];
   t.tags=$("e_g").value.split(/[,\s]+/).map(function(x){return x.replace(/^#/,"").toLowerCase()}).filter(Boolean);save();closeSheet();render()}
@@ -257,9 +278,58 @@ function openMenu(){$("toast").classList.remove("on");var perm=("Notification"in
   +'<label>Reminders</label><button class="pill" id="m_ics" style="width:100%">Send my reminders to Calendar ('+n+')</button><p>The reliable way. Your phone\u2019s calendar rings even when this app is closed. Run it again after you add tasks.</p>'
   +'<button class="pill" id="m_notif" style="width:100%;margin-top:10px">'+(perm==="granted"?"Notifications are on ✓":perm==="denied"?"Notifications blocked in phone settings":perm==="unsupported"?"Notifications not supported here":"Turn on notifications")+'</button><p>These alert you while the app is open or recently used.</p>'
   +'<label>Options</label><div class="row"><button class="pill'+(S.set.sound?" on":"")+'" id="m_snd">Sound</button><button class="pill'+(S.set.nag?" on":"")+'" id="m_nag">Nag when overdue</button></div>'
+  +'<label>Evening planning</label><div class="row"><button class="pill'+(S.set.plan?" on":"")+'" id="m_plan">Plan-tomorrow prompt</button><input class="f" type="time" id="m_pt" value="'+esc(S.set.planTime)+'" aria-label="Planning time"></div><button class="pill" id="m_planbtn" style="width:100%;margin-top:8px">Plan tomorrow now</button><p>A nudge at this time to line up tomorrow. It is also added to the calendar file.</p>'
   +'<label for="m_mor">Morning reminder time (tasks with no time)</label><input class="f" type="time" id="m_mor" value="'+esc(S.set.morning)+'">'
   +'<label>Your data</label><div class="row"><button class="pill" id="m_exp">Back up</button><button class="pill" id="m_imp">Restore</button></div><p>Tasks are stored on this phone only. Back up now and then.</p>'
   +'<div class="btns"><button class="pill main" id="m_close">Done</button></div></div>';$("sheet").classList.add("on")}
+
+/* ---------- plan tomorrow ---------- */
+function tmr(){return ymd(addD(new Date(),1))}
+function openPlan(){var tm=tmr(),a=active(),h='<h2>Plan tomorrow</h2><div class="sub" style="margin-top:-6px">'+esc(fmtDay(tm))+' · '+esc(DAYN[pd(tm).getDay()]+" "+pd(tm).getDate()+" "+MON[pd(tm).getMonth()])+'</div><div class="pl">';
+  var tt=a.filter(function(t){return t.due===tm||t.doOn===tm}).sort(byDue);
+  h+='<h3>Already on tomorrow · '+tt.length+'</h3>'+(tt.length?tt.map(function(t){return'<div class="pr"><span>'+esc(t.title)+(t.time?" · "+esc(fmtTime(t.time)):"")+'</span></div>'}).join(""):'<div class="sub">Nothing yet.</div>');
+  var op=a.filter(function(t){return t.due&&t.due<=todayS()}).sort(byDue);
+  if(op.length)h+='<h3>Still open from today · '+op.length+'</h3>'+op.map(function(t){return'<div class="pr"><span>'+esc(t.title)+'</span><button class="pill" data-mv="'+t.id+'">→ Tomorrow</button></div>'}).join("");
+  var ib=a.filter(function(t){return!t.due&&!t.doOn}).slice(0,8);
+  if(ib.length)h+='<h3>From your inbox</h3>'+ib.map(function(t){return'<div class="pr"><span>'+esc(t.title)+'</span><button class="pill" data-mv="'+t.id+'">→ Tomorrow</button></div>'}).join("");
+  h+='<h3>Add for tomorrow</h3><input class="f" id="p_in" placeholder="e.g. gym bag ready 8am" enterkeyhint="done"></div><div class="btns"><button class="pill main" id="p_done">Done planning</button></div>';
+  $("sh").innerHTML=h;$("sheet").classList.add("on");$("toast").classList.remove("on")}
+function moveTomorrow(id){var t=find(id);if(!t)return;snap();t.due=tmr();t.fired={};t.extra=[];if(t.doOn&&t.doOn<=todayS())t.doOn="";save();render();openPlan()}
+function planAdd(){var i=$("p_in"),v=i.value.trim();if(!v)return;var o=parse(v);if(!o.title)o.title=v;if(!o.due)o.due=tmr();snap();S.tasks.push(mk(o));save();render();openPlan();setTimeout(function(){var x=$("p_in");if(x)x.focus()},50)}
+
+/* ---------- focus mode ---------- */
+function fq(){var tt=active().filter(inToday),od=tt.filter(overdue).sort(byDue),rs=tt.filter(function(t){return!overdue(t)}).sort(function(x,y){return y.pri-x.pri||byDue(x,y)});return od.concat(rs)}
+function fmtClock(ms){var s=Math.max(0,Math.ceil(ms/1000));return p2(Math.floor(s/60))+":"+p2(s%60)}
+function openFocus(){fxOpen=true;ensureAudio();$("focus").classList.add("on");renderFocus()}
+function closeFocus(){fxOpen=false;$("focus").classList.remove("on");render()}
+function renderFocus(){var el=$("focus"),q=fq(),qq=q.filter(function(t){return fskip.indexOf(t.id)<0});if(!qq.length&&q.length){fskip=[];qq=q}
+  if(!qq.length){el.innerHTML='<div class="fxin"><div class="empty"><big>🎉</big>Nothing left today. Nice.</div><div class="btns"><button class="pill main bigb" data-fx="close">Close</button></div></div>';return}
+  var t=qq[0],h='<div class="fxin"><div class="eyebrow">Focus · 1 of '+q.length+' left today</div><div class="fxt">'+esc(t.title)+'</div><div class="meta">';
+  if(t.due)h+='<span class="chip '+(overdue(t)?"bad":"today")+'">'+(overdue(t)&&t.due<todayS()?"Overdue · ":"")+esc(fmtDay(t.due))+(t.time?" · "+esc(fmtTime(t.time)):"")+'</span>';
+  t.tags.forEach(function(g){h+='<span class="chip tag">#'+esc(g)+'</span>'});h+='</div>';
+  if(t.notes)h+='<div class="note">'+esc(t.notes)+'</div>';
+  if(t.steps&&t.steps.length){h+='<div style="margin-top:6px">'+t.steps.map(function(x,i){return'<div class="stp'+(x.d?" d":"")+'"><button class="sc" data-fstep="'+i+'" aria-label="Tick step"><b>✓</b></button><span>'+esc(x.t)+'</span></div>'}).join("")+'</div>'}
+  var run=S.focus&&S.focus.id===t.id?S.focus:null;
+  if(run&&run.fin)h+='<div class="fxtime">00:00</div><div class="fxsub">Time\u2019s up. Done, or keep going?</div>';
+  else if(run)h+='<div class="fxtime" id="fxtime">'+fmtClock(run.end-Date.now())+'</div><div class="fxsub">Just this one thing. Ignore everything else.</div>';
+  else h+='<div class="spacer"></div>';
+  h+='<div class="btns" style="flex-direction:column">';
+  if(run&&!run.fin)h+='<button class="pill bigb" data-fx="stop">Stop timer</button>';
+  else h+='<div class="row"><button class="pill bigb" data-fx="t25">'+(run?"+25 min":"Start 25 min")+'</button><button class="pill bigb" data-fx="t10">'+(run?"+10 min":"Start 10 min")+'</button></div>';
+  h+='<button class="pill main bigb" data-fx="done" data-id="'+t.id+'">✓ Done</button><div class="row"><button class="pill bigb" data-fx="skip" data-id="'+t.id+'">Skip for now</button><button class="pill bigb" data-fx="close">Close</button></div></div></div>';
+  el.innerHTML=h}
+$("focus").addEventListener("click",function(e){ensureAudio();var b=e.target.closest("button");if(!b)return;
+  var qq=fq().filter(function(t){return fskip.indexOf(t.id)<0}),t=qq[0]||fq()[0];
+  if(b.hasAttribute("data-fstep")&&t){var i=+b.getAttribute("data-fstep");if(t.steps[i]){t.steps[i].d=!t.steps[i].d;save();renderFocus()}return}
+  var a=b.getAttribute("data-fx");if(!a)return;
+  if(a==="close"){closeFocus();return}
+  if(a==="skip"&&t){fskip.push(t.id);S.focus=null;save();renderFocus();return}
+  if(a==="done"&&t){complete(t.id);return}
+  if(a==="stop"){S.focus=null;save();renderFocus();return}
+  if((a==="t25"||a==="t10")&&t){var m=a==="t25"?25:10,base=S.focus&&S.focus.id===t.id&&!S.focus.fin?S.focus.end:Date.now();S.focus={id:t.id,end:base+m*60000,fin:0};save();renderFocus()}});
+setInterval(function(){if(!S.focus)return;var left=S.focus.end-Date.now();
+  if(left<=0&&!S.focus.fin){S.focus.fin=1;save();var t=find(S.focus.id);beep();if(t)notify(t,"Focus time is up");if(fxOpen)renderFocus()}
+  else if(fxOpen&&!S.focus.fin){var el=$("fxtime");if(el)el.textContent=fmtClock(left)}},1000);
 
 /* ---------- reminders ---------- */
 function ensureAudio(){try{if(!audio){var C=window.AudioContext||window.webkitAudioContext;if(C)audio=new C()}if(audio&&audio.state==="suspended")audio.resume()}catch(e){}}
@@ -271,11 +341,14 @@ function notify(t,body){
 function bodyFor(t){return t.due?(fmtDay(t.due)+(t.time?" at "+fmtTime(t.time):"")):"Reminder"}
 function addAlert(t,nag){if(alerts.indexOf(t.id)<0)alerts.push(t.id);renderAlerts();beep();notify(t,(nag?"Still to do · ":"")+bodyFor(t))}
 function dismissAlert(id){var i=alerts.indexOf(id);if(i>=0){alerts.splice(i,1);renderAlerts()}}
-function renderAlerts(){$("alerts").innerHTML=alerts.map(function(id){var t=find(id);if(!t)return"";
+function renderAlerts(){$("alerts").innerHTML=alerts.map(function(id){if(id==="__plan")return'<div class="al"><b>🌙 Plan tomorrow (2 min)</b><div class="sub" style="margin:-4px 0 8px">Line up tomorrow so you wake up with a plan.</div><div class="row"><button class="pill main" style="background:#111;color:#fff;border-color:#111" data-plan="now">Plan now</button><button class="pill" data-plan="later">In 30 min</button><button class="pill" data-plan="skip">Skip today</button></div></div>';var t=find(id);if(!t)return"";
   return'<div class="al" data-al="'+id+'"><b>⏰ '+esc(t.title)+'</b><div class="sub" style="margin:-4px 0 8px">'+esc(bodyFor(t))+'</div><div class="row"><button class="pill main" style="background:#111;color:#fff;border-color:#111" data-ad="'+id+'">Done</button><button class="pill" data-sn="10" data-id="'+id+'">+10 min</button><button class="pill" data-sn="60" data-id="'+id+'">+1 hr</button><button class="pill" data-ax="'+id+'">Dismiss</button></div></div>'}).join("")}
 function tick(){var now=Date.now(),ch=false;
   S.tasks.forEach(function(t){if(t.done)return;fireTimes(t).forEach(function(ft){var k=String(ft);if(ft<=now&&!t.fired[k]){t.fired[k]=1;ch=true;if(now-ft<30*60000){t.lastFire=now;addAlert(t,false)}}});
     if(S.set.nag&&t.time&&overdue(t)&&alerts.indexOf(t.id)<0&&t.lastFire&&now-t.lastFire>15*60000&&now-dueMs(t)<6*3600000){t.lastFire=now;ch=true;addAlert(t,true)}});
+  if(S.set.plan&&S.set.planDone!==todayS()&&S.set.planFired!==todayS()&&alerts.indexOf("__plan")<0&&(!S.set.planSnooze||now>S.set.planSnooze)){
+    var nd=new Date(),nm=nd.getHours()*60+nd.getMinutes(),pm=mins(S.set.planTime);
+    if(nm>=pm&&nm<pm+240){S.set.planFired=todayS();alerts.push("__plan");renderAlerts();beep();notify({id:"plan",title:"Plan tomorrow"},"2 minutes to line up tomorrow");ch=true}}
   if(ch){save();render()}}
 function snooze(id,m){var t=find(id);if(!t)return;t.extra=t.extra||[];t.extra.push(Date.now()+m*60000);dismissAlert(id);save();toast("Snoozed "+(m>=60?m/60+" hr":m+" min"))}
 
@@ -290,6 +363,7 @@ function exportIcs(){var L=["BEGIN:VCALENDAR","VERSION:2.0","PRODID:-//My To-do/
     var base=t.time?0:mins(S.set.morning);(t.remind.length?t.remind:[0]).forEach(function(r){var tot=base-r;
       L.push("BEGIN:VALARM","ACTION:DISPLAY","DESCRIPTION:"+icsEsc(t.title),t.time?("TRIGGER:-PT"+r+"M"):(tot>=0?"TRIGGER;RELATED=START:PT"+tot+"M":"TRIGGER;RELATED=START:-PT"+(-tot)+"M"),"END:VALARM")});
     L.push("END:VEVENT")});
+  if(S.set.plan){n++;var pt=S.set.planTime,pe=mins(pt)+10;L.push("BEGIN:VEVENT","UID:todo-plan@my-todo","DTSTAMP:"+st,"DTSTART:"+todayS().replace(/-/g,"")+"T"+pt.replace(":","")+"00","DTEND:"+todayS().replace(/-/g,"")+"T"+p2(Math.floor(pe/60)%24)+p2(pe%60)+"00","RRULE:FREQ=DAILY","SUMMARY:Plan tomorrow (2 min)","BEGIN:VALARM","ACTION:DISPLAY","DESCRIPTION:Plan tomorrow","TRIGGER:-PT0M","END:VALARM","END:VEVENT")}
   L.push("END:VCALENDAR");
   if(!n){toast("No dated tasks to send yet");return}
   dl("todo-reminders.ics","text/calendar",L.join("\r\n")+"\r\n");toast("Calendar file ready. Open it and tap Add All.")}
@@ -305,12 +379,18 @@ $("tundo").addEventListener("click",function(){if(lastSnap){S.tasks=JSON.parse(l
 $("tabs").addEventListener("click",function(e){var b=e.target.closest("[data-tab]");if(b){view=b.getAttribute("data-tab");render();window.scrollTo(0,0)}});
 $("app").addEventListener("click",function(e){ensureAudio();
   var c=e.target.closest("[data-chk]");if(c){var id=c.getAttribute("data-chk"),t=find(id);if(!t)return;if(t.done){snap();t.done=false;t.doneAt=0;save();render()}else{var row=c.closest(".task");if(row)row.classList.add("pop");setTimeout(function(){complete(id)},180)}return}
-  if(e.target.id==="gear"){openMenu();return}if(e.target.id==="clr"){snap();S.tasks=S.tasks.filter(function(t){return!t.done});save();render();toast("Cleared",true);return}
+  if(e.target.id==="gear"){openMenu();return}if(e.target.id==="focusbtn"){openFocus();return}if(e.target.id==="clr"){snap();S.tasks=S.tasks.filter(function(t){return!t.done});save();render();toast("Cleared",true);return}
   var r=e.target.closest(".task");if(r)openEdit(r.getAttribute("data-id"))});
 $("alerts").addEventListener("click",function(e){var b=e.target.closest("button");if(!b)return;
+  if(b.hasAttribute("data-plan")){var pa=b.getAttribute("data-plan");dismissAlert("__plan");if(pa==="now")openPlan();else if(pa==="later"){S.set.planFired="";S.set.planSnooze=Date.now()+30*60000;save()}else{S.set.planDone=todayS();save()}return}
   if(b.hasAttribute("data-ad"))complete(b.getAttribute("data-ad"));else if(b.hasAttribute("data-sn"))snooze(b.getAttribute("data-id"),+b.getAttribute("data-sn"));else if(b.hasAttribute("data-ax"))dismissAlert(b.getAttribute("data-ax"))});
 $("sheet").addEventListener("click",function(e){var el=e.target;if(el.id==="sheet"){closeSheet();return}var b=el.closest("button");if(!b)return;
-  if(b.hasAttribute("data-q")){var q=b.getAttribute("data-q");$("e_d").value=q==="x"?"":ymd(addD(new Date(),+q));if(q==="x")$("e_tm").value="";return}
+  if(b.hasAttribute("data-q")){var q=b.getAttribute("data-q");if(q==="tn"){$("e_d").value=todayS();$("e_tm").value="20:00"}else if(q==="tm"){$("e_d").value=ymd(addD(new Date(),1));$("e_tm").value="09:00"}else{$("e_d").value=q==="x"?"":ymd(addD(new Date(),+q));if(q==="x")$("e_tm").value=""}return}
+  if(b.hasAttribute("data-stog")){var si=+b.getAttribute("data-stog");stepsDraft[si].d=!stepsDraft[si].d;renderSteps();return}
+  if(b.hasAttribute("data-sdel")){stepsDraft.splice(+b.getAttribute("data-sdel"),1);renderSteps();return}
+  if(b.id==="e_sadd"){addStep();return}
+  if(b.hasAttribute("data-mv")){moveTomorrow(b.getAttribute("data-mv"));return}
+  if(b.id==="p_done"){S.set.planDone=todayS();save();closeSheet();toast("Tomorrow is sorted. Sleep well.");return}
   if(b.hasAttribute("data-pri")){[].forEach.call(document.querySelectorAll("#e_p .pill"),function(x){x.classList.remove("on")});b.classList.add("on");return}
   if(b.hasAttribute("data-rem")){b.classList.toggle("on");return}
   if(b.id==="e_save")saveEdit();else if(b.id==="e_del"){snap();S.tasks=S.tasks.filter(function(t){return t.id!==editId});save();closeSheet();render();toast("Deleted",true)}
@@ -318,14 +398,17 @@ $("sheet").addEventListener("click",function(e){var el=e.target;if(el.id==="shee
   else if(b.id==="m_notif"){ensureAudio();if("Notification"in window&&Notification.permission==="default"){Notification.requestPermission().then(function(){openMenu()})}else openMenu()}
   else if(b.id==="m_snd"){S.set.sound=!S.set.sound;save();if(S.set.sound){ensureAudio();beep()}openMenu()}
   else if(b.id==="m_nag"){S.set.nag=!S.set.nag;save();openMenu()}
+  else if(b.id==="m_plan"){S.set.plan=!S.set.plan;save();openMenu()}
+  else if(b.id==="m_planbtn"){openPlan()}
   else if(b.id==="m_exp"){dl("todo-backup-"+todayS()+".json","application/json",JSON.stringify(S,null,1));toast("Backup saved")}
-  else if(b.id==="m_imp"){var f=document.createElement("input");f.type="file";f.accept=".json,application/json";f.onchange=function(){var r=new FileReader();r.onload=function(){try{var j=JSON.parse(r.result);if(!j.tasks)throw 0;snap();S=j;S.set=S.set||{};if(S.set.sound==null)S.set.sound=true;if(S.set.nag==null)S.set.nag=true;if(!S.set.morning)S.set.morning="09:00";save();closeSheet();render();toast("Restored "+S.tasks.length+" tasks")}catch(e){toast("That file didn't work")}};r.readAsText(f.files[0])};f.click()}});
-$("sheet").addEventListener("change",function(e){if(e.target.id==="m_mor"&&e.target.value){S.set.morning=e.target.value;save()}});
+  else if(b.id==="m_imp"){var f=document.createElement("input");f.type="file";f.accept=".json,application/json";f.onchange=function(){var r=new FileReader();r.onload=function(){try{var j=JSON.parse(r.result);if(!j.tasks)throw 0;snap();S=j;S.set=S.set||{};if(S.set.sound==null)S.set.sound=true;if(S.set.nag==null)S.set.nag=true;if(!S.set.morning)S.set.morning="09:00";if(S.set.plan==null)S.set.plan=true;if(!S.set.planTime)S.set.planTime="21:00";save();closeSheet();render();toast("Restored "+S.tasks.length+" tasks")}catch(e){toast("That file didn't work")}};r.readAsText(f.files[0])};f.click()}});
+$("sheet").addEventListener("keydown",function(e){if(e.key!=="Enter")return;if(e.target.id==="e_sn"){e.preventDefault();addStep()}else if(e.target.id==="p_in"){e.preventDefault();planAdd()}});
+$("sheet").addEventListener("change",function(e){if(e.target.id==="m_mor"&&e.target.value){S.set.morning=e.target.value;save()}if(e.target.id==="m_pt"&&e.target.value){S.set.planTime=e.target.value;S.set.planFired="";save()}});
 document.addEventListener("visibilitychange",function(){if(!document.hidden){tick();render()}});
 
 if(navigator.storage&&navigator.storage.persist)try{navigator.storage.persist()}catch(e){}
 if("serviceWorker"in navigator)window.addEventListener("load",function(){navigator.serviceWorker.register("sw.js").catch(function(){})});
-window.__todo={parse:parse,S:function(){return S},mk:mk,render:render,tick:tick};
+window.__todo={parse:parse,S:function(){return S},mk:mk,render:render,tick:tick,openPlan:openPlan};
 render();tick();setInterval(tick,20000);
 })();
 </script>
