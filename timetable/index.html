@@ -177,6 +177,23 @@ header .eyebrow{color:rgba(255,255,255,.7)}
 .sg{align-self:center;flex:none;min-height:44px;border:0;border-radius:12px;padding:0 12px;font:700 12px var(--body);background:#111;color:#fff;cursor:pointer}
 .tdtoast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:#111;color:#fff;border-radius:99px;padding:10px 16px;display:none;gap:12px;align-items:center;z-index:50;max-width:92vw;font-weight:500}
 .tdtoast.on{display:flex}.tdtoast button{border:0;background:none;color:#FFB0CB;font:700 14px var(--body);min-height:36px;cursor:pointer}
+:root{--plan:#0E9F9A}.plan{--c:var(--plan)}
+.addw{display:block;width:100%;min-height:48px;margin:0 0 12px;border:1.5px dashed #111;border-radius:16px;background:#fff;color:#111;font:700 14px var(--body);cursor:pointer}
+.blk.gap{padding-top:10px;padding-bottom:10px}.blk.gap .tx b{color:var(--mu);font-weight:500}
+.addb{width:30px;height:30px;border-radius:50%;border:1.5px dashed #9a98a6;background:#fff;color:#555;font:700 18px/1 var(--body);cursor:pointer;padding:0}
+.edl{display:block;margin-top:6px;border:0;background:none;padding:0;color:var(--mu);font:700 12px var(--body);text-decoration:underline;cursor:pointer}
+.sg.rm{background:#fff;color:#E5384B;border:1px solid #E5384B}
+.sheet{position:fixed;inset:0;z-index:60;background:rgba(0,0,0,.45);display:flex;align-items:flex-end;justify-content:center}
+.sheet[hidden]{display:none}
+.sheet form{width:100%;max-width:520px;max-height:92dvh;overflow:auto;background:#fff;border-radius:24px 24px 0 0;padding:20px 16px calc(env(safe-area-inset-bottom,0px) + 16px);display:grid;gap:12px}
+.sheet label{display:grid;gap:5px;font:500 11px var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--mu)}
+.sheet input,.sheet select{font:500 16px var(--body);color:#111;min-height:46px;border:1px solid #D5D5D5;border-radius:12px;padding:0 12px;background:#fff;text-transform:none;letter-spacing:0;width:100%}
+.sheet .two{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.sheet label.ck{display:flex;align-items:center;gap:10px;font:500 14px var(--body);text-transform:none;letter-spacing:0;color:#111}
+.sheet label.ck input{width:22px;min-height:22px;height:22px}
+.sheet .acts{display:grid;grid-template-columns:1fr 2fr;gap:10px}
+.sheet .acts button{min-height:50px;border-radius:14px;border:1px solid #D5D5D5;background:#fff;font:700 15px var(--body);cursor:pointer}
+.sheet .acts button[type=submit]{background:#111;color:#fff;border-color:#111}
 </style>
 </head>
 <body>
@@ -189,16 +206,34 @@ header .eyebrow{color:rgba(255,255,255,.7)}
 <section class="bento" id="top" aria-label="Today"></section>
 <div class="row"><h3 id="ttl">Monday</h3>
 <div class="seg" id="mode"><button data-m="day" aria-pressed="true">Day</button><button data-m="week" aria-pressed="false">Week</button><button data-m="tables" aria-pressed="false">Tables</button></div></div>
+<button class="addw" id="addBtn">+ Add to my week</button>
 <nav class="days" id="days" aria-label="Day"></nav>
 <main id="view"></main>
+<div id="added"></div>
+<div class="sheet" id="sh" hidden><form id="fm">
+<h3 id="shT">Add to my week</h3>
+<label>What<input id="fT" required maxlength="60" placeholder="e.g. Dinner with Sam"></label>
+<label>Day<select id="fD"></select></label>
+<div class="two"><label>From<input id="fS" type="time" required></label><label>To<input id="fE" type="time" required></label></div>
+<label>Type<select id="fC"><option value="plan">Plan</option><option value="work">Work</option><option value="travel">Travel</option><option value="eat">Eat</option><option value="gym">Gym</option><option value="guitar">Guitar</option><option value="free">Free / rest</option></select></label>
+<label>Details<input id="fN" maxlength="80" placeholder="Optional"></label>
+<label class="ck"><input id="fR" type="checkbox"> Repeat every week</label>
+<p class="hint" id="fW"></p>
+<div class="acts"><button type="button" id="fX">Cancel</button><button type="submit">Save</button></div>
+</form></div>
 <div class="lg" id="lg"></div>
 <div class="notes" id="notes"></div>
 </div>
 <script>
 var DAYS=["Mon","Tue","Wed","Thu","Fri","Sat","Sun"];
 var FULL={Mon:"Monday",Tue:"Tuesday",Wed:"Wednesday",Thu:"Thursday",Fri:"Friday",Sat:"Saturday",Sun:"Sunday"};
-var LEG=[["work","Work"],["travel","Travel"],["gym","Gym"],["eat","Eat"],["intern","Internship"],["guitar","Guitar"],["sleep","Wake and bed"],["free","Free time"],["tent","Optional"]];
-function plan(d){return (SCHED&&SCHED.days[d])||[]}
+var LEG=[["plan","Added"],["work","Work"],["travel","Travel"],["gym","Gym"],["eat","Eat"],["intern","Internship"],["guitar","Guitar"],["sleep","Wake and bed"],["free","Free time"],["tent","Optional"]];
+var XK="tt-extra-v1";
+function xs(){try{var j=JSON.parse(localStorage.getItem(XK));return Array.isArray(j)?j:[]}catch(e){return[]}}
+function xsave(a){try{localStorage.setItem(XK,JSON.stringify(a))}catch(e){}}
+function xon(x,date){if(x.date===date)return true;if(!x.rep||x.date>date)return false;return pdT(x.date).getDay()===pdT(date).getDay()}
+function xblock(x){var s=mm(x.s),e=mm(x.e);if(e<=s)e+=1440;return[s/60,e/60,esc(x.title),esc(x.det||""),x.cat||"plan",x.s+"|"+x.e,x.id]}
+function plan(d){var base=(SCHED&&SCHED.days[d])||[];if(!SCHED)return base;var date=dateOfDay(d),ex=xs().filter(function(x){return xon(x,date)}).map(xblock);return ex.length?base.concat(ex).sort(function(a,b){return a[0]-b[0]}):base}
 function hh(h){return String(h%24).padStart(2,"0")+":00"}
 function tl(b){return b[5]?b[5].split("|"):[hh(b[0]),hh(b[1])]}
 function bid(d,b){return d+b[0]+b[4]}
@@ -207,13 +242,15 @@ function fm(x){var m=Math.max(1,Math.round(x*60)),h=Math.floor(m/60);return h?h+
 var store={},KEY="tt-";
 function save(){try{localStorage.setItem(KEY,JSON.stringify(store))}catch(e){}}
 
-var RAW=null,SCHED=null,nowH=0,di=0,diff=0,cur=null,sel="Mon",mode="day",first=true;
+var prevCur=null,RAW=null,SCHED=null,nowH=0,di=0,diff=0,cur=null,sel="Mon",mode="day",first=true;
 function clock(){
   var n=new Date(),h=n.getHours()+n.getMinutes()/60,e=new Date(n.getFullYear(),n.getMonth(),n.getDate());
   if(h<3){e.setDate(e.getDate()-1);h+=24}
   var p=SCHED.monday.split("-"),m=new Date(+p[0],+p[1]-1,+p[2]);
   diff=Math.round((e-m)/864e5);nowH=h;di=diff;
   cur=(diff>=0&&diff<7)?DAYS[diff]:null;
+  if(!first&&cur&&prevCur&&cur!==prevCur)sel=cur;
+  prevCur=cur;
   if(first){sel=cur||"Mon";first=false}
 }
 
@@ -281,7 +318,7 @@ function suggest(id){var j=tdState();if(!j)return;var t=j.tasks.filter(function(
       if(st>=0){undoSnap=JSON.stringify(j.tasks);t.doOn=ds;t.doTime=clk(st);t.dur=est;t.fired={};tdSave(j);sel=dd;render();tdToast("Booked "+fmtD(ds)+" "+clk(st)+"–"+clk(st+est),true);return}}}
   tdToast("No free gap before it is due. Shorten it or move something.",false)}
 document.getElementById("tdu").addEventListener("click",function(){var j=tdState();if(j&&undoSnap){j.tasks=JSON.parse(undoSnap);undoSnap=null;tdSave(j);render();document.getElementById("tdt").classList.remove("on")}});
-window.addEventListener("storage",function(e){if(SCHED&&(e.key===TK||e.key===GK))render()});
+window.addEventListener("storage",function(e){if(SCHED&&(e.key===TK||e.key===GK||e.key===XK))render()});
 function trk(b){return b[4]!=="free"}
 function isGym(b){return b[4]==="gym"||(b[4]==="tent"&&b[2]==="Gym bonus")}
 
@@ -295,6 +332,7 @@ function renderTop(){
     if(!nb&&di<6){var tp=plan(DAYS[di+1]).slice().sort(function(a,b){return a[0]-b[0]});if(tp.length){nb=tp[0];tm=true;until=nb[0]+24-nowH}}
   }
   var cat=cb?cb[4]:"free",title=cb?cb[2]:"Free time",sub=cb&&cb[3]?cb[3]:(cb?"":"Nothing scheduled right now"),lbl="Now";
+  if(!cb&&cur&&nb&&!tm)sub="Free until "+tl(nb)[0];
   if(!cur){lbl="Heads up";title=diff<0?"Week not started":"Schedule has ended";sub="This schedule is for the week of "+SCHED.label+". Ask Claude for the new week."}
   var h='<div class="tile hero '+cat+'"><div><span class="live"><i></i>'+lbl+'</span><h2>'+title+'</h2>';
   if(cb){var t=tl(cb);h+='<div class="range">'+t[0]+' to '+t[1]+(sub?' · '+sub:'')+'</div>'}else h+='<div class="range">'+sub+'</div>';
@@ -316,12 +354,12 @@ function renderTop(){
 
 function row(b,d){
   var on=d===cur&&nowH>=b[0]&&nowH<b[1],id=bid(d,b),done=isDone(d,b),t=tl(b);
-  return '<div class="blk '+b[4]+(on?' now':'')+(done?' done':'')+'"><span class="t">'+t[0]+'<i>'+t[1]+'</i></span><div class="tx"><b>'+b[2]+'</b>'+(b[3]?'<small>'+b[3]+'</small>':'')+(on?'<em>Now</em>':'')+'</div>'+
+  return '<div class="blk '+b[4]+(on?' now':'')+(done?' done':'')+'"><span class="t">'+t[0]+'<i>'+t[1]+'</i></span><div class="tx"><b>'+b[2]+'</b>'+(b[3]?'<small>'+b[3]+'</small>':'')+(on?'<em>Now</em>':'')+(b[6]?'<button class="edl" data-ed="'+b[6]+'">Edit</button>':'')+'</div>'+
   (trk(b)?'<button class="chk" data-k="'+id+'" aria-pressed="'+done+'" aria-label="Mark '+b[2]+' done"></button>':'<span></span>')+'</div>';
 }
 function wcell(b,d){
   var id=bid(d,b),h=b[1]-b[0];
-  return '<div class="blk '+b[4]+(isDone(d,b)?' done':'')+'" style="grid-column:'+(DAYS.indexOf(d)+2)+';grid-row:'+(b[0]-7)+'/'+(b[1]-7)+'"><b>'+b[2]+'</b>'+(h>=2&&b[3]?'<small>'+b[3]+'</small>':'')+'</div>';
+  return '<div class="blk '+b[4]+(isDone(d,b)?' done':'')+'" style="grid-column:'+(DAYS.indexOf(d)+2)+';grid-row:'+(Math.floor(b[0])-7)+'/'+(Math.ceil(b[1])-7)+'"><b>'+b[2]+'</b>'+(h>=2&&b[3]?'<small>'+b[3]+'</small>':'')+'</div>';
 }
 function dayRange(l){
   var ix=l.map(function(d){return DAYS.indexOf(d)}).sort(function(a,b){return a-b}),runs=[],s=0;
@@ -332,14 +370,14 @@ function tableGrid(){
   var h='<div class="tw"><table class="tt"><thead><tr><th class="tc"></th>';
   DAYS.forEach(function(d){h+='<th class="'+(d===cur?'today':'')+'"><button data-d="'+d+'" data-go="1">'+d+'</button></th>'});
   h+='</tr></thead><tbody>';
-  var P={};DAYS.forEach(function(d){P[d]=plan(d)});
+  var P={},occ={};DAYS.forEach(function(d){P[d]=plan(d);occ[d]=0});
   for(var r=9;r<27;r++){
     h+='<tr><td class="tc">'+hh(r)+'</td>';
     DAYS.forEach(function(d){
-      var b=null;P[d].forEach(function(x){if(r>=x[0]&&r<x[1])b=x});
+      if(occ[d]>r)return;
+      var b=null;P[d].forEach(function(x){if(!b&&r>=Math.floor(x[0])&&r<Math.ceil(x[1]))b=x});
       if(!b){h+='<td></td>';return}
-      if(b[0]!==r)return;
-      var t=tl(b),span=b[1]-b[0];
+      var t=tl(b),span=Math.ceil(b[1])-r;occ[d]=r+span;
       h+='<td class="c '+b[4]+(isDone(d,b)?' done':'')+'" rowspan="'+span+'"><b>'+b[2]+'</b>'+(b[3]?'<small>'+b[3]+'</small>':'')+'<span class="tm2">'+(b[4]==="sleep"&&span===1&&b[2].indexOf("Bed")===0?t[0]:t[0]+'–'+t[1])+'</span></td>';
     });
     h+='</tr>';
@@ -365,6 +403,12 @@ function tableList(){
   });
   return h+'</tbody></table></div>';
 }
+function gapRow(d,s,e){var on=d===cur&&nowH*60>=s&&nowH*60<e;
+  return{s:s,h:'<div class="blk free gap'+(on?' now':'')+'"><span class="t">'+clk(s)+'<i>'+clk(e)+'</i></span><div class="tx"><b>Free</b><small>'+durL(e-s)+(on?' · now':'')+'</small></div><button class="addb" data-add="'+d+'|'+s+'|'+e+'" aria-label="Add something at '+clk(s)+'">+</button></div>'}}
+function gapItems(d,td){var iv=[];plan(d).forEach(function(b){iv.push([Math.round(b[0]*60),Math.round(b[1]*60)])});td.timed.forEach(function(x){iv.push([x.s,x.e])});
+  iv.sort(function(a,b){return a[0]-b[0]});var out=[],c=540;
+  iv.forEach(function(v){if(v[0]-c>=20)out.push(gapRow(d,c,v[0]));c=Math.max(c,v[1])});
+  if(1440-c>=20)out.push(gapRow(d,c,1440));return out}
 function nav(){
   var h="";
   DAYS.forEach(function(d){
@@ -384,6 +428,7 @@ function body(){
     ((SCHED.hints||{})[sel]||[]).forEach(function(x){h+='<p class="hint">'+x+'</p>'});
     var td=todosFor(sel),items=plan(sel).map(function(b){return{s:startMin(b),h:row(b,sel)}});
     td.timed.forEach(function(x){items.push({s:x.s,h:trow(x,sel)})});
+    gapItems(sel,td).forEach(function(g){items.push(g)});
     items.sort(function(a,b){return a.s-b.s});
     h+='<div class="list">'+items.map(function(x){return x.h}).join("")+'</div>'+looseHtml(td.loose);
   }else{
@@ -399,9 +444,48 @@ function body(){
   document.getElementById("view").innerHTML=h;
   document.querySelectorAll("#mode button").forEach(function(x){x.setAttribute("aria-pressed",x.dataset.m===mode)});
 }
-function render(){renderTop();nav();body()}
+function addedList(){var el=document.getElementById("added");if(!SCHED||!el)return;var mon=SCHED.monday,end=dateOfDay("Sun");
+  var a=xs().filter(function(x){return x.rep?x.date<=end:(x.date>=mon&&x.date<=end)});
+  function wi(x){return(pdT(x.date).getDay()+6)%7}
+  a.sort(function(p,q){return wi(p)-wi(q)||(p.s<q.s?-1:1)});
+  var h='<div class="secH">Added to my week</div>';
+  if(!a.length)h+='<p class="hint">Nothing added yet. Use the button above, or the + on any free slot.</p>';
+  a.forEach(function(x){var wd=DAYS[wi(x)];
+    h+='<div class="tdc"><div class="tn"><b>'+esc(x.title)+'</b><small>'+(x.rep?"Every "+FULL[wd]:fmtD(x.date))+' · '+x.s+'–'+x.e+(x.det?' · '+esc(x.det):'')+'</small></div><button class="sg" data-ed="'+x.id+'">Edit</button><button class="sg rm" data-rm="'+x.id+'">Remove</button></div>'});
+  el.innerHTML=h}
+function render(){renderTop();nav();body();addedList()}
+var editId=null,warned=false;
+function $(i){return document.getElementById(i)}
+function openForm(o){
+  var x=o.id?xs().filter(function(q){return q.id===o.id})[0]:null;editId=x?x.id:null;warned=false;$("fW").textContent="";
+  $("shT").textContent=x?"Edit":"Add to my week";
+  $("fD").innerHTML=DAYS.map(function(d){return'<option value="'+d+'">'+fmtD(dateOfDay(d))+'</option>'}).join("");
+  var day=x?DAYS[(pdT(x.date).getDay()+6)%7]:(o.day||sel||"Mon"),s,e;
+  if(x){s=x.s;e=x.e}else if(o.s!=null){s=clk(o.s);e=clk(Math.min(o.e,o.s+60))}else{var n=new Date(),hr=Math.min(n.getHours()+1,22);s=p2(hr)+":00";e=p2(hr+1)+":00"}
+  $("fD").value=day;$("fT").value=x?x.title:"";$("fS").value=s;$("fE").value=e;$("fC").value=x?x.cat:"plan";$("fN").value=x?(x.det||""):"";$("fR").checked=!!(x&&x.rep);
+  $("sh").hidden=false;setTimeout(function(){$("fT").focus()},50)}
+function closeForm(){$("sh").hidden=true}
+$("fX").addEventListener("click",closeForm);
+$("sh").addEventListener("click",function(e){if(e.target===$("sh"))closeForm()});
+document.addEventListener("keydown",function(e){if(e.key==="Escape")closeForm()});
+["fD","fS","fE"].forEach(function(i){$(i).addEventListener("input",function(){warned=false;$("fW").textContent=""})});
+$("fm").addEventListener("submit",function(ev){
+  ev.preventDefault();
+  var day=$("fD").value,s=$("fS").value,en=$("fE").value,title=$("fT").value.trim();if(!title||!s||!en)return;
+  var s1=mm(s),e1=mm(en);if(e1<=s1)e1+=1440;
+  var clash=plan(day).filter(function(b){return b[6]!==editId&&b[4]!=="free"&&b[0]*60<e1&&b[1]*60>s1});
+  if(clash.length&&!warned){warned=true;$("fW").innerHTML="Overlaps "+clash[0][2]+" "+tl(clash[0]).join("–")+". Tap Save again to add it anyway.";return}
+  var arr=xs(),old=editId?arr.filter(function(q){return q.id===editId})[0]:null,rep=$("fR").checked;
+  var date=(old&&old.rep&&DAYS[(pdT(old.date).getDay()+6)%7]===day)?old.date:dateOfDay(day);
+  var obj={id:editId||("x"+Date.now().toString(36)+Math.random().toString(36).slice(2,5)),date:date,s:s,e:en,title:title,det:$("fN").value.trim(),cat:$("fC").value,rep:rep};
+  arr=arr.filter(function(q){return q.id!==obj.id});arr.push(obj);xsave(arr);
+  closeForm();sel=day;render();tdToast((old?"Saved ":"Added ")+title+" · "+fmtD(date)+" "+s,false)});
 document.addEventListener("click",function(e){
   var b=e.target.closest("button");if(!b)return;
+  if(b.id==="addBtn"){openForm({});return}
+  if(b.dataset.add){var q=b.dataset.add.split("|");openForm({day:q[0],s:+q[1],e:+q[2]});return}
+  if(b.dataset.ed){openForm({id:b.dataset.ed});return}
+  if(b.dataset.rm){xsave(xs().filter(function(x){return x.id!==b.dataset.rm}));render();tdToast("Removed",false);return}
   if(b.dataset.k){store[b.dataset.k]=!store[b.dataset.k];save();render();return}
   if(b.dataset.td){completeTodo(b.dataset.td);return}
   if(b.dataset.sg){suggest(b.dataset.sg);return}
@@ -414,6 +498,7 @@ function mondayOf(){var n=new Date();if(n.getHours()<3)n.setDate(n.getDate()-1);
 function resolve(raw){
   var m=mondayOf(),key=ymdT(m),wk=(raw.weeks||{})[key]||{},days={},mo=["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
   DAYS.forEach(function(d){days[d]=(wk.days&&wk.days[d])||(raw.days||{})[d]||[]});
+  DAYS.forEach(function(d){days[d].forEach(function(b){if(b[5]){var q=b[5].split("|"),a=mm(q[0]),z=mm(q[1]);if(z<=a)z+=1440;b[0]=a/60;b[1]=z/60}})});
   return{monday:key,label:m.getDate()+" "+mo[m.getMonth()]+" "+m.getFullYear(),days:days,
     hints:wk.hints||raw.hints||{},notes:(raw.notes||[]).concat(wk.notes||[])}}
 function start(raw){
