@@ -416,11 +416,9 @@ function importData(file){
 function sessionView(){
   var s=S[sel],n=s.ex.length,d=done(sel),h='<div class="list s'+sel+'">';
   s.ex.forEach(function(e,j){
-    var k="s"+sel+"-"+j,on=!!st.t[k],p=e[1].split(" × "),w=curW(e[0]),lw=lastW(e[0]),sg=sugg(e[0]);
-    var up=(lw!=null&&w>lw)?' <span class="upb">+'+(Math.round((w-lw)*10)/10)+' kg</span>':'';
+    var k="s"+sel+"-"+j,on=!!st.t[k],p=e[1].split(" × ");
     h+='<div class="blk s'+sel+(on?' done':'')+'" data-row="'+k+'"><span class="t">'+p[0]+' ×<i>'+p[1]+'</i></span><div class="tx"><b>'+esc(e[0])+'</b>'+
-      '<small>Rest '+mmss(restFor(e[0]))+(lw!=null?' · last '+lw+' kg':'')+(e[2]?' · '+esc(e[2]):'')+up+'</small>'+
-      '<div class="wt"><button class="stp" data-j="'+j+'" data-d="-2.5" aria-label="Less weight">−</button><input class="wi" type="number" inputmode="decimal" step="0.5" min="0" data-j="'+j+'" value="'+(w||'')+'" placeholder="BW" aria-label="Weight in kg for '+esc(e[0])+'"><span class="kg">kg</span><button class="stp" data-j="'+j+'" data-d="2.5" aria-label="More weight">+</button>'+(sg?'<button class="try" data-try="'+j+'" data-v="'+sg+'">Try '+sg+' kg</button>':'')+'</div></div>'+
+      '<small>Rest '+mmss(restFor(e[0]))+(e[2]?' · '+esc(e[2]):'')+'</small></div>'+
       '<button class="chk" data-k="'+k+'" aria-pressed="'+on+'" aria-label="Mark '+esc(e[0])+' done"></button></div>';
   });
   h+='</div><button class="fin" data-fin="1"'+(d<n?' disabled':'')+'>'+(d<n?'Tick everything to finish':'Finish session')+'</button><button class="reset" data-reset="1">Clear ticks</button>';
@@ -447,15 +445,11 @@ function logView(){
    '<div class="tile stat"><span class="lab">This week</span><div class="big">'+wkCount()+'<small> sessions</small></div><span class="sub">Last week '+lastWk()+'</span></div>'+
    '<div class="tile stat"><span class="lab">Calories (est.)</span><div class="big">'+kw+'<small> kcal</small></div><span class="sub">This week · '+kc+' all time</span></div>'+
    '<div class="tile stat"><span class="lab">Streak</span><div class="big">'+streak()+'<small> wk</small></div><span class="sub">Weeks with 4+ sessions</span></div>'+
-   '<div class="tile stat"><span class="lab">Total lifted</span><div class="big">'+(vol>=1000?(vol/1000).toFixed(1)+'<small> t</small>':Math.round(vol)+'<small> kg</small>')+'</div><span class="sub">'+up+' lifts up</span></div></div>';
-  var lh="";
-  order.forEach(function(n){var v=lifts[n];if(!v)return;var d=Math.round((v[v.length-1]-v[0])*10)/10;
-    lh+='<div class="lift"><div class="ln"><b>'+esc(n)+'</b><small>'+(v[v.length-1]||'BW')+(v[v.length-1]?' kg':'')+' now'+(v.length>1?' · '+(d>=0?'+':'')+d+' kg since start':'')+'</small></div>'+spark(v,90,38)+'</div>'});
-  h+='<h4 class="sec">Lifts</h4>'+(lh||'<p class="hint">Finish a session and your lifts show up here with a line that climbs.</p>');
+   '<div class="tile stat"><span class="lab">Time trained</span><div class="big">'+(Math.round(L.reduce(function(a,x){return a+(x.dur||0)},0)/6)/10)+'<small> hrs</small></div><span class="sub">All time</span></div></div>';
   var sh="";
   L.slice().reverse().forEach(function(x){
     sh+='<details class="ses"><summary><span><b>'+x.tab+'</b><small>'+fmtD(x.d)+' · '+x.dur+' min</small></span><em>'+x.kcal+' kcal</em></summary><ul>'+
-      x.ex.map(function(e){return '<li><span>'+esc(e.n)+'</span><span>'+(e.kg?e.kg+' kg':'BW')+' · '+e.s+' sets</span></li>'}).join("")+
+      x.ex.map(function(e){return '<li><span>'+esc(e.n)+'</span><span>'+e.s+' sets</span></li>'}).join("")+
       '</ul>'+(x.gaps&&paceMsg(x.gaps)?'<p class="hint">'+paceMsg(x.gaps)+'</p>':'')+'<button class="del" data-del="'+x.id+'">'+(armDel===x.id?'Tap again to delete':'Delete session')+'</button></details>'});
   h+='<h4 class="sec">Sessions</h4>'+(sh||'<p class="hint">No sessions logged yet.</p>');
   h+='<p class="hint">Calories are an estimate: about 4.5 METs × your weight × session time.</p>';
