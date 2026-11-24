@@ -2,10 +2,17 @@
 // Usage: node build.js
 const fs = require("fs");
 const path = require("path");
-const s = JSON.parse(fs.readFileSync(path.join(__dirname, "schedule.json"), "utf8"));
+const raw = JSON.parse(fs.readFileSync(path.join(__dirname, "schedule.json"), "utf8"));
+const WEEKS = 8; // how many weeks ahead the calendar feed covers
 const DAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 const p2 = (n) => String(n).padStart(2, "0");
 
+const ymd = (d) => `${d.getFullYear()}-${p2(d.getMonth() + 1)}-${p2(d.getDate())}`;
+function mondayOf(offset) {
+  const n = new Date();
+  return new Date(n.getFullYear(), n.getMonth(), n.getDate() - ((n.getDay() + 6) % 7) + offset * 7);
+}
+let s = null; // the week currently being written
 function stamp(dayIndex, h) {
   const [y, m, d] = s.monday.split("-").map(Number);
   const dt = new Date(Date.UTC(y, m - 1, d + dayIndex));
@@ -38,6 +45,9 @@ const ALERTS = {
   tent: [[30, "{t}: optional gym bonus, only if you have energy"]],
 };
 
+for (let w = 0; w < WEEKS; w++) {
+  const monday = ymd(mondayOf(w)), wk = (raw.weeks || {})[monday] || {};
+  s = { monday, days: Object.fromEntries(DAYS.map((d) => [d, (wk.days && wk.days[d]) || (raw.days || {})[d] || []])) };
 DAYS.forEach((d, i) => {
   (s.days[d] || []).forEach((b) => {
     if (b[4] === "free" || b[4] === "sleep") return;
@@ -52,6 +62,7 @@ DAYS.forEach((d, i) => {
     L.push("END:VEVENT");
   });
 });
+}
 L.push("END:VCALENDAR");
 fs.writeFileSync(path.join(__dirname, "calendar.ics"), L.join("\r\n") + "\r\n");
 console.log("calendar.ics written:", L.filter((x) => x === "BEGIN:VEVENT").length, "events");

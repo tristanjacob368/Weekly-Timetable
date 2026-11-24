@@ -207,7 +207,7 @@ function fm(x){var m=Math.max(1,Math.round(x*60)),h=Math.floor(m/60);return h?h+
 var store={},KEY="tt-";
 function save(){try{localStorage.setItem(KEY,JSON.stringify(store))}catch(e){}}
 
-var SCHED=null,nowH=0,di=0,diff=0,cur=null,sel="Mon",mode="day",first=true;
+var RAW=null,SCHED=null,nowH=0,di=0,diff=0,cur=null,sel="Mon",mode="day",first=true;
 function clock(){
   var n=new Date(),h=n.getHours()+n.getMinutes()/60,e=new Date(n.getFullYear(),n.getMonth(),n.getDate());
   if(h<3){e.setDate(e.getDate()-1);h+=24}
@@ -410,19 +410,25 @@ document.addEventListener("click",function(e){
 });
 var lg="";LEG.forEach(function(x){lg+='<span class="'+x[0]+'"><i></i>'+x[1]+'</span>'});
 document.getElementById("lg").innerHTML=lg;
-function start(d){
-  SCHED=d;
+function mondayOf(){var n=new Date();if(n.getHours()<3)n.setDate(n.getDate()-1);return new Date(n.getFullYear(),n.getMonth(),n.getDate()-((n.getDay()+6)%7))}
+function resolve(raw){
+  var m=mondayOf(),key=ymdT(m),wk=(raw.weeks||{})[key]||{},days={},mo=["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+  DAYS.forEach(function(d){days[d]=(wk.days&&wk.days[d])||(raw.days||{})[d]||[]});
+  return{monday:key,label:m.getDate()+" "+mo[m.getMonth()]+" "+m.getFullYear(),days:days,
+    hints:wk.hints||raw.hints||{},notes:(raw.notes||[]).concat(wk.notes||[])}}
+function start(raw){
+  var d=resolve(raw);SCHED=d;
   document.getElementById("wk").textContent="Week of "+d.label+" · 24h clock";
   document.getElementById("notes").innerHTML=(d.notes||[]).map(function(x){return "<p>"+x+"</p>"}).join("");
   KEY="tt-"+d.monday;
   try{store=JSON.parse(localStorage.getItem(KEY)||"{}")||{}}catch(e){store={}}
   clock();render();
 }
-fetch("../schedule.json",{cache:"no-cache"}).then(function(r){return r.json()}).then(start).catch(function(){
+fetch("../schedule.json",{cache:"no-cache"}).then(function(r){return r.json()}).then(function(j){RAW=j;start(j)}).catch(function(){
   document.getElementById("view").innerHTML='<p class="hint">Could not load the schedule. Check your connection and reopen the app.</p>';
 });
-setInterval(function(){if(!SCHED)return;clock();renderTop();if(mode==="day")body()},60000);
-document.addEventListener("visibilitychange",function(){if(!document.hidden&&SCHED){clock();render()}});
+setInterval(function(){if(!SCHED)return;if(RAW&&ymdT(mondayOf())!==SCHED.monday){start(RAW);return}clock();renderTop();if(mode==="day")body()},60000);
+document.addEventListener("visibilitychange",function(){if(!document.hidden&&SCHED){if(RAW&&ymdT(mondayOf())!==SCHED.monday){start(RAW);return}clock();render()}});
 </script>
 </body>
 </html>
