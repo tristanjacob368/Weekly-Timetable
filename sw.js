@@ -1,6 +1,6 @@
 /* My Week shell: keeps the app working offline.
    Bump C when the app changes so phones pick up the new files. */
-var C = "myweek-v4";
+var C = "myweek-v5";
 var ASSETS = [
   "./", "index.html", "manifest.webmanifest", "icon-192.png", "icon-512.png", "apple-touch-icon.png",
   "timetable/index.html", "todo/index.html", "gym/index.html", "schedule.json",
@@ -23,7 +23,7 @@ self.addEventListener("activate", function (e) {
 self.addEventListener("fetch", function (e) {
   var u = new URL(e.request.url);
   if (e.request.method !== "GET" || u.origin !== location.origin) return;
-  var fresh = /schedule\.json$|calendar\.ics$/.test(u.pathname);
+  var fresh = /schedule\.json$|calendar\.ics$|index\.html$|\/$/.test(u.pathname);
   if (fresh) {
     e.respondWith(fetch(e.request).then(function (r) {
       if (r && r.ok) { var copy = r.clone(); caches.open(C).then(function (c) { c.put(e.request, copy); }); }
